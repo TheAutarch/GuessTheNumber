@@ -2,15 +2,19 @@ from data import *
 from math import *
 from random import *
 
-print(data)
-
 data["general"]["currentState"] = "startScreen"
 
 
 def playerInput(msg, validation, value):
    while (True):
-        insert = input(msg)
+        insert = input(msg + ": ")
         shouldContinue = False
+
+        if (insert == data["settings"]["StopGame"]["CurrentSetting"]):
+            exit()
+
+        if (insert == data["settings"]["MainMenuCommand"]["CurrentSetting"]):
+            return "MainMenu"
 
         if (not insert): return
 
@@ -54,14 +58,20 @@ If this is your first time playing this game, I strongly advise you to pay a vis
 
         """)
 
-        insert = input("Please, pick a section")
+        while (True):
+            insert = playerInput("Please, pick a section", [ValueError], int)
 
-        if (insert == "1"):
-            data["general"]["currentState"] = "Settings"
-            return
+            if (insert == "MainMenu"):
+                data["general"]["currentState"] = "startScreen"
+                return
 
-        elif (insert == "2"):
-            return "StartGame"
+            if (insert == 1):
+                data["general"]["currentState"] = "Settings"
+                return
+
+            if (insert == 2):
+                return "StartGame"
+        
 
     elif (data["general"]["currentState"] == "Settings"):
         print(f"""
@@ -76,7 +86,11 @@ MinValue: {data["settings"]["MinValue"]["CurrentSetting"]} (Any intiger 0 and ab
 MaxValue: {data["settings"]["MaxValue"]["CurrentSetting"]} (Any intiger 0 and above, if difference between this value and the min value is < 10 this value will be adjusted automatically by the game)
         """)
 
-        insert = input("Please, pick a section") 
+        insert = playerInput("Please, pick a section", [ValueError], str)
+
+        if (insert == "MainMenu"):
+            data["general"]["currentState"] = "startScreen"
+            return
 
 
 
