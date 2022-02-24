@@ -1,11 +1,14 @@
-from data import *
+
+
 from math import *
 from random import *
+from utils import *
 from os import *
 
-dataObject = data()
+dataObject = Util()
+print(dataObject.data)
 
-dataObject["general"]["currentState"] = "startScreen"
+dataObject.data["general"]["currentState"] = "startScreen"
 
 
 def playerInput(msg, validation, value):
@@ -13,11 +16,12 @@ def playerInput(msg, validation, value):
         insert = input(msg + ": ")
         shouldContinue = False
 
-        if (insert == dataObject["settings"]["StopGame"]["CurrentSetting"]):
+        if (insert == dataObject.data["settings"]["StopGame"]["CurrentSetting"]):
             exit()
 
-        if (insert == dataObject["settings"]["MainMenuCommand"]["CurrentSetting"]):
+        if (insert == dataObject.data["settings"]["MainMenuCommand"]["CurrentSetting"]):
             return "MainMenu"
+
 
         if (not insert): return
 
@@ -51,39 +55,84 @@ def evaluateInput(input):
     pass 
 
 
+def findPlayerFromKey(data, key):
+    for i in data["players"]:
+        print(data["players"][i])
+        if data["players"][i]["key"] == key: return i
+
+
 def renderTerminal():
     system("cls")
 
-    print(dataObject["text"][dataObject["general"]["currentState"]])
+    if (dataObject.data["general"]["currentState"] == "startScreen"):
+        dataObject.startScreen()
 
-    if (dataObject["general"]["currentState"] == "startScreen"):
         insert = playerInput("Please write a command", [ValueError], int)
 
         if (insert == "MainMenu"):
-            dataObject["general"]["currentState"] = "startScreen"
+            dataObject.data["general"]["currentState"] = "startScreen"
             return
 
         if (insert == 1):
-            dataObject["general"]["currentState"] = "Settings"
+            dataObject.data["general"]["currentState"] = "Settings"
             return
 
         if (insert == 2):
-            dataObject["general"]["currentState"] = "game"
+            dataObject.data["general"]["currentState"] = "game"
             return "StartGame"
-        
-    elif (dataObject["general"]["currentState"] == "Settings"):
+
+    elif (dataObject.data["general"]["currentState"] == "Settings"):
+        dataObject.settings(dataObject.data)
+
         insert = playerInput("Please write a command", [ValueError], int)
 
         if (insert == "MainMenu"):
-            dataObject["general"]["currentState"] = "startScreen"
+            dataObject.data["general"]["currentState"] = "startScreen"
             return
 
-    elif (dataObject["general"]["currentState"] == "game"):
-        insert = playerInput("Please write a command", [ValueError], int)
+    elif (dataObject.data["general"]["currentState"] == "game"):
 
-        if (insert == "MainMenu"):
-            dataObject["general"]["currentState"] = "startScreen"
-            return
+        result = dataObject.game(dataObject.data)
+
+        if (result == "initPlr1"):
+            name = playerInput("Enter your name", [ValueError], str)
+
+            dataObject.data["currentPlayer"] = 1
+
+            dataObject.data["players"]["player1"] = {
+                "name": name,
+                "points": 0,
+                "key": 1
+            }
+
+            dataObject.data["gameState"] = "started"
+
+        elif (result == "initPlr1And2"):
+            name1 = playerInput("Player 1: Enter your name: ", [ValueError], str)
+            name2 = playerInput("Player 2: Enter your name: ", [ValueError], str)
+
+            dataObject.data["currentPlayer"] = 1
+
+            dataObject.data["players"]["player1"] = {
+                "name": name1,
+                "points": 0,
+                "key": 1
+            }
+
+            dataObject.data["players"]["player2"] = {
+                "name": name2,
+                "points": 0,
+                "key": -1
+            }
+
+            #dataObject.data["randomNumber"]: Enter number
+
+            dataObject.data["gameState"] = "started"
+
+        elif (result == "promptTurn"):
+            number = playerInput("Guess number", [ValueError], str)
+
+            evaluateInput(number)
 
 
 
