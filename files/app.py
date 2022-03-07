@@ -3,15 +3,37 @@
 from math import *
 from random import *
 from utils import *
-from os import *
 
 dataObject = Util()
 print(dataObject.data)
 
 dataObject.data["general"]["currentState"] = "startScreen"
 
+
+def clearPlayerState(gameState):
+    dataObject.data["general"]["currentState"] = "game"
+    dataObject.data["gameState"] = gameState 
+    dataObject.data["currentTurn"] = 1
+    dataObject.data["msg"] = ""
+    dataObject.data["turn"] = 0
+    dataObject.data["randomNumber"] = randint(dataObject.data["settings"]["MinValue"]["CurrentSetting"], dataObject.data["settings"]["MaxValue"]["CurrentSetting"])
+
+
+def clearConsole():
+    print("\n" * 150)
+
+
+def findSetting(key):
+    for i in dataObject.data["settings"]:
+        if (key.lower() == i.lower()):
+            return dataObject.data["settings"][i]
+
+
 def validateSetting(key, value, current):
-    for i in dataObject.data["settings"][key]["Changeable"]:
+    setting = findSetting(key)
+    count = 0
+
+    for i in setting["Changeable"]:
         if (i == "Anything"):
             return value
 
@@ -19,23 +41,43 @@ def validateSetting(key, value, current):
             passed = True
 
             try: 
-                int(value)
+                value = int(value)
 
             except ValueError:
                 print("You can only assign integers to this setting")
                 passed = False
 
             if (passed):
+                if (setting["Requirements"][0] == "greaterThan"):
+                    if (type(setting["Requirements"][1])) == int:
+                        if (int(value) <= setting["Requirements"][1]):
+                            value = int(setting["Requirements"][1])
+
+                        if (int(value) > dataObject.data["settings"]["MaxValue"]["CurrentSetting"] - 9):
+                            value = dataObject.data["settings"]["MaxValue"]["CurrentSetting"] - 9
+
+                    else:
+                        if (int(value) < dataObject.data["settings"][setting["Requirements"][1]]["CurrentSetting"] + setting["Requirements"][2]):
+                            value = dataObject.data["settings"][setting["Requirements"][1]]["CurrentSetting"] + setting["Requirements"][2]
+
+                elif (setting["Requirements"][0] == "between"):
+                    if (setting["Requirements"][1] > int(value)):
+                        value = setting["Requirements"][1]
+
+                    elif (int(value) > setting["Requirements"][2] ):
+                        value = setting["Requirements"][2]
+
+                    else:
+                        value = value
+
                 return int(value)
 
-        if (i == value):
-            string = dataObject.data["settings"][key]["Changeable"]
-            strLs = string.split("(")
-            lsString = "".join(strLs)
-            newStrLs = string.split(")")
-            print(newStrLs)
-            exit()
-            return value
+        if (i.lower() == value.lower()):
+            setting["Changeable"].remove(i)
+            setting["Changeable"].append(current)
+            return i
+
+        count += 1
 
 
 def playerInput(msg, validation, value):
@@ -43,28 +85,31 @@ def playerInput(msg, validation, value):
         insert = input(msg + ": ")
         shouldContinue = False
 
-        if (str(insert) == dataObject.data["settings"]["StopGame"]["CurrentSetting"]):
+        if ((str(insert)).lower() == dataObject.data["settings"]["StopGame"]["CurrentSetting"].lower()):
             exit()
 
-        if (str(insert) == dataObject.data["settings"]["MainMenuCommand"]["CurrentSetting"]):
+        if ((str(insert)).lower() == dataObject.data["settings"]["MainMenuCommand"]["CurrentSetting"].lower()):
             return "MainMenu"
 
         if (dataObject.data["general"]["currentState"] == "Win" or dataObject.data["general"]["currentState"] == "Lose"):
             return "newGame"
 
         if (dataObject.data["general"]["currentState"] == "Settings"):
-            cmd = insert.split(": ")
+            cmd = insert.split(" ")
             cmdContinue = False
 
             for i in dataObject.data["settings"]:
-                if (i == cmd[0]):
-                    val = validateSetting(cmd[0], cmd[1], dataObject.data["settings"][cmd[0]]["CurrentSetting"])
+                if (str(i).lower() == cmd[0].lower()):
+                    if (len(cmd) == 2):
+                        setting = findSetting(cmd[0])
 
-                    if (val):
-                        dataObject.data["settings"][cmd[0]]["CurrentSetting"] = val
-                        cmdContinue = True
-                        system("cls")
-                        dataObject.settings(dataObject.data)
+                        val = validateSetting(cmd[0], cmd[1], setting["CurrentSetting"])
+
+                        if (val):
+                            setting["CurrentSetting"] = val
+                            cmdContinue = True
+                            clearConsole()
+                            dataObject.settings(dataObject.data)
 
             if (cmdContinue): return
 
@@ -83,18 +128,6 @@ def playerInput(msg, validation, value):
         if shouldContinue: continue
 
         return insert
-
-
-def configGame():
-    pass
-
-
-def initiatePlayer():
-    pass 
-
-
-def selectNumber():
-    pass 
 
 
 def evaluateInput(input):
@@ -120,7 +153,7 @@ def findPlayerFromKey(data, key):
 
 
 def renderTerminal():
-    system("cls")
+    clearConsole()
 
     if (dataObject.data["general"]["currentState"] == "startScreen"):
         dataObject.startScreen()
@@ -153,6 +186,11 @@ def renderTerminal():
 
         if (result == "initPlr1"):
             name = playerInput("Enter your name", [ValueError], str)
+
+            if (name == "MainMenu"):
+                clearPlayerState("notStarted")
+                dataObject.data["general"]["currentState"] = "startScreen"
+                return
 
             dataObject.data["currentPlayer"] = 1
 
@@ -200,6 +238,12 @@ def renderTerminal():
         elif (result == "promptTurn"):
             number = playerInput("Guess number", [ValueError], int)
 
+            if (number == "MainMenu"):
+                clearPlayerState("notStarted")
+                dataObject.data["general"]["currentState"] = "startScreen"
+                return
+
+
             if (dataObject.data["settings"]["PlayerMode"]["CurrentSetting"] == "MultiPlayer"):
                 dataObject.data["currentTurn"] *= -1
 
@@ -220,22 +264,22 @@ def renderTerminal():
         currentPlayer["wins"] += 1
         currentPlayer["points"] += dataObject.data["winPoints"]
 
-        insert = playerInput(f"""
-Enter the main menu command, if you'd like to access the main menu and change settings. (Caution: entering the main menu will restart game state). Cmd: {dataObject.data["settings"]["MainMenuCommand"]["CurrentSetting"]}
+        insert = playerInput(f"""Enter the main menu command, if you'd like to access the main menu and change settings. (Caution: entering the main menu will restart game state). Cmd: {dataObject.data["settings"]["MainMenuCommand"]["CurrentSetting"]}
 Enter the shutdown command, if you'd like to end your game session. Cmd: {dataObject.data["settings"]["StopGame"]["CurrentSetting"]}
 Amount of wins: {currentPlayer["wins"]}
 Amount of losses: {currentPlayer["losses"]}
 Amount of points: {currentPlayer["points"]}
-Any other input will commence a new round.
+Any other input, but core commands will commence a new round.
 """, [ValueError], str)
 
+        if (insert == "MainMenu"):
+            clearPlayerState("notStarted")
+            dataObject.data["general"]["currentState"] = "startScreen"
+            return
+
+
         if (insert == "newGame"):
-            dataObject.data["general"]["currentState"] = "game"
-            dataObject.data["gameState"] = "started" 
-            dataObject.data["currentTurn"] = 1
-            dataObject.data["msg"] = ""
-            dataObject.data["turn"] = 0
-            dataObject.data["randomNumber"] = randint(dataObject.data["settings"]["MinValue"]["CurrentSetting"], dataObject.data["settings"]["MaxValue"]["CurrentSetting"])
+            clearPlayerState("started")
 
     elif (dataObject.data["general"]["currentState"] == "Lose"):
         currentPlayer = findPlayerFromKey(dataObject.data, dataObject.data["currentPlayer"])
@@ -248,22 +292,15 @@ Any other input will commence a new round.
         if (currentPlayer["points"] < 0):
             currentPlayer["points"] = 0
 
-        insert = playerInput(f"""
-Enter the main menu command, if you'd like to access the main menu and change settings. (Caution: entering the main menu will restart game state). Cmd: {dataObject.data["settings"]["MainMenuCommand"]["CurrentSetting"]}
+        insert = playerInput(f"""Enter the main menu command, if you'd like to access the main menu and change settings. (Caution: entering the main menu will restart game state). Cmd: {dataObject.data["settings"]["MainMenuCommand"]["CurrentSetting"]}
 Enter the shutdown command, if you'd like to end your game session. Cmd: {dataObject.data["settings"]["StopGame"]["CurrentSetting"]}
 Amount of wins: {currentPlayer["wins"]}
 Amount of losses: {currentPlayer["losses"]}
 Amount of points: {currentPlayer["points"]}
-Any other input will commence a new round.
-""", [ValueError], str)
+Any other input will commence a new round""", [ValueError], str)
 
         if (insert == "newGame"):
-            dataObject.data["general"]["currentState"] = "game"
-            dataObject.data["gameState"] = "started" 
-            dataObject.data["currentTurn"] = 1
-            dataObject.data["msg"] = ""
-            dataObject.data["turn"] = 0
-            dataObject.data["randomNumber"] = randint(dataObject.data["settings"]["MinValue"]["CurrentSetting"], dataObject.data["settings"]["MaxValue"]["CurrentSetting"])
+            clearPlayerState("started")
 
 
 
