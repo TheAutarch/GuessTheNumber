@@ -125,11 +125,7 @@ Difficulty: {data["settings"]["Difficulty"]["CurrentSetting"]} (This setting wil
 
     def game(self, data):
         if (data["gameState"] == "notStarted"):
-            if (data["settings"]["PlayerMode"]["CurrentSetting"] == "SinglePlayer"):
-                return "initPlr1"
-
-            else:
-                return "initPlr1and2"
+            return data["settings"]["PlayerMode"]["CurrentSetting"] == "SinglePlayer" and 1 or 2
 
         elif (data["gameState"] == "started"):
             if (data["turn"] == 0):

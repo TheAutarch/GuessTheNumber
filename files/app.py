@@ -29,6 +29,31 @@ def findSetting(key):
             return dataObject.data["settings"][i]
 
 
+def createPlayerData(name, key):
+    return {
+            "name": name,
+            "points": 0,
+            "key": key,
+            "guess": 0,
+            "wins": 0,
+            "losses": 0
+            }
+
+
+def initPlayers(loops):
+    for i in range(1, loops + 1):
+        print("loop")
+        name = playerInput(f"Player{i}: Enter your name", [ValueError], str)
+
+        if (name == "MainMenu"):
+            clearPlayerState("notStarted")
+            dataObject.data["general"]["currentState"] = "startScreen"
+            return "MainMenu"
+
+
+        dataObject.data["players"]["player1"] = createPlayerData(name, 1)
+
+
 def validateSetting(key, value, current):
     setting = findSetting(key)
     count = 0
@@ -184,58 +209,16 @@ def renderTerminal():
     elif (dataObject.data["general"]["currentState"] == "game"):
         result = dataObject.game(dataObject.data)
 
-        if (result == "initPlr1"):
-            name = playerInput("Enter your name", [ValueError], str)
+        if (type(result) == int): 
+            respone = initPlayers(result)
+            if (respone == "MainMenu"): return
 
-            if (name == "MainMenu"):
-                clearPlayerState("notStarted")
-                dataObject.data["general"]["currentState"] = "startScreen"
-                return
+        dataObject.data["currentPlayer"] = 1
+        dataObject.data["randomNumber"] = randint(dataObject.data["settings"]["MinValue"]["CurrentSetting"], dataObject.data["settings"]["MaxValue"]["CurrentSetting"])
+        dataObject.data["gameState"] = "started"
 
-            dataObject.data["currentPlayer"] = 1
-
-            dataObject.data["players"]["player1"] = {
-                "name": name,
-                "points": 0,
-                "key": 1,
-                "guess": 0,
-                "wins": 0,
-                "losses": 0
-            }
-
-            dataObject.data["randomNumber"] = randint(dataObject.data["settings"]["MinValue"]["CurrentSetting"], dataObject.data["settings"]["MaxValue"]["CurrentSetting"])
-
-            dataObject.data["gameState"] = "started"
-
-        elif (result == "initPlr1And2"):
-            name1 = playerInput("Player 1: Enter your name: ", [ValueError], str)
-            name2 = playerInput("Player 2: Enter your name: ", [ValueError], str)
-
-            dataObject.data["currentPlayer"] = 1
-
-            dataObject.data["players"]["player1"] = {
-                "name": name1,
-                "points": 0,
-                "key": 1,
-                "guess": 0,
-                "wins": 0,
-                "losses": 0
-            }
-
-            dataObject.data["players"]["player2"] = {
-                "name": name2,
-                "points": 0,
-                "key": -1,
-                "guess": 0,
-                "wins": 0,
-                "losses": 0
-            }
-
-            dataObject.data["randomNumber"] = randint(dataObject.data["settings"]["MinValue"]["CurrentSetting"], dataObject.data["settings"]["MaxValue"]["CurrentSetting"])
-
-            dataObject.data["gameState"] = "started"
-
-        elif (result == "promptTurn"):
+        if (result == "promptTurn"):
+            print("run")
             number = playerInput("Guess number", [ValueError], int)
 
             if (number == "MainMenu"):
@@ -243,10 +226,10 @@ def renderTerminal():
                 dataObject.data["general"]["currentState"] = "startScreen"
                 return
 
-
             if (dataObject.data["settings"]["PlayerMode"]["CurrentSetting"] == "MultiPlayer"):
+                print("here")
                 dataObject.data["currentTurn"] *= -1
-
+            print(dataObject.data["currentTurn"])
             dataObject.data["turn"] += 1
             dataObject.data["msg"] = evaluateInput(number)
 
@@ -255,7 +238,7 @@ def renderTerminal():
 
             elif (dataObject.data["msg"] == "Lose"):
                 dataObject.data["general"]["currentState"] = "Lose"
-
+                
     elif (dataObject.data["general"]["currentState"] == "Win"):
         currentPlayer = findPlayerFromKey(dataObject.data, dataObject.data["currentPlayer"])
 
@@ -298,6 +281,11 @@ Amount of wins: {currentPlayer["wins"]}
 Amount of losses: {currentPlayer["losses"]}
 Amount of points: {currentPlayer["points"]}
 Any other input will commence a new round""", [ValueError], str)
+
+        if (insert == "MainMenu"):
+            clearPlayerState("notStarted")
+            dataObject.data["general"]["currentState"] = "startScreen"
+            return
 
         if (insert == "newGame"):
             clearPlayerState("started")
