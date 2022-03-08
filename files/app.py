@@ -40,7 +40,38 @@ def createPlayerData(name, key):
             }
 
 
+def displayResults():
+    components = [
+        "Enter the main menu command, if you'd like to access the main menu and change settings. (Caution: entering the main menu will restart game state). Cmd: {dataObject.data['settings']['MainMenuCommand']['CurrentSetting']}",
+        "Enter the shutdown command, if you'd like to end your game session. Cmd: {dataObject.data['settings']['StopGame']['CurrentSetting']}",
+        "Amount of wins: {currentPlayer['wins']}",
+        "Amount of losses: {currentPlayer['losses']}",
+        "Amount of points: {currentPlayer['points']}",
+        "Any other input, but core commands will commence a new round."
+    ]
+
+    playerWins = "Amount of wins: "
+    playerLosses = "Amount of losses: "
+    playerPoints = "Amount of points: "
+    print(dataObject.data["players"])
+    #exit()
+    for i in dataObject.data["players"]:
+        playerWins += i + ": " + str(dataObject.data["players"][i]["wins"]) + "  "
+        playerLosses += i + ": " + str(dataObject.data["players"][i] ["losses"]) + "  "
+        playerPoints += i + ": " + str(dataObject.data["players"][i]["points"]) + "  "
+
+    return f"""{components[0]}
+{components[1]}
+{playerWins}
+{playerLosses}
+{playerPoints}
+Any other input, but core commands will commence a new round.
+"""
+
+
 def initPlayers(loops):
+    keys = [1, -1]
+
     for i in range(1, loops + 1):
         print("loop")
         name = playerInput(f"Player{i}: Enter your name", [ValueError], str)
@@ -51,7 +82,8 @@ def initPlayers(loops):
             return "MainMenu"
 
 
-        dataObject.data["players"]["player1"] = createPlayerData(name, 1)
+        dataObject.data["players"]["player" + str(i)] = createPlayerData(name, keys[0])
+        keys.remove(keys[0])
 
 
 def validateSetting(key, value, current):
@@ -247,13 +279,9 @@ def renderTerminal():
         currentPlayer["wins"] += 1
         currentPlayer["points"] += dataObject.data["winPoints"]
 
-        insert = playerInput(f"""Enter the main menu command, if you'd like to access the main menu and change settings. (Caution: entering the main menu will restart game state). Cmd: {dataObject.data["settings"]["MainMenuCommand"]["CurrentSetting"]}
-Enter the shutdown command, if you'd like to end your game session. Cmd: {dataObject.data["settings"]["StopGame"]["CurrentSetting"]}
-Amount of wins: {currentPlayer["wins"]}
-Amount of losses: {currentPlayer["losses"]}
-Amount of points: {currentPlayer["points"]}
-Any other input, but core commands will commence a new round.
-""", [ValueError], str)
+        results = displayResults()
+
+        insert = playerInput(results, [ValueError], str)
 
         if (insert == "MainMenu"):
             clearPlayerState("notStarted")
@@ -275,12 +303,9 @@ Any other input, but core commands will commence a new round.
         if (currentPlayer["points"] < 0):
             currentPlayer["points"] = 0
 
-        insert = playerInput(f"""Enter the main menu command, if you'd like to access the main menu and change settings. (Caution: entering the main menu will restart game state). Cmd: {dataObject.data["settings"]["MainMenuCommand"]["CurrentSetting"]}
-Enter the shutdown command, if you'd like to end your game session. Cmd: {dataObject.data["settings"]["StopGame"]["CurrentSetting"]}
-Amount of wins: {currentPlayer["wins"]}
-Amount of losses: {currentPlayer["losses"]}
-Amount of points: {currentPlayer["points"]}
-Any other input will commence a new round""", [ValueError], str)
+        results = displayResults()
+
+        insert = playerInput(results, [ValueError], str)
 
         if (insert == "MainMenu"):
             clearPlayerState("notStarted")

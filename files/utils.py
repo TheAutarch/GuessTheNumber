@@ -19,6 +19,8 @@ dataRoot = {
 
     "losePoints": -50,
 
+    "currentPlayer": 1,
+
     "msg": "",
 
     "turn": 0,
@@ -134,13 +136,9 @@ Difficulty: {data["settings"]["Difficulty"]["CurrentSetting"]} (This setting wil
             else:
                 pass
 
-            plrState = ""
-                
-            if (data["settings"]["PlayerMode"]["CurrentSetting"] == "SinglePlayer"):
-                plrState = f"{data['players']['player1']['name']}'s points: {data['players']['player1']['points']}. {data['players']['player1']['name']}'s wins: {data['players']['player1']['wins']}. {data['players']['player1']['name']}'s losses: {data['players']['player1']['losses']}"
-
             currentPlayer = findPlayerFromKey(data, data["currentPlayer"])
 
+            plrState = plrState = f"{currentPlayer['name']}'s points: {currentPlayer['points']}. {currentPlayer['name']}'s wins: {currentPlayer['wins']}. {currentPlayer['name']}'s losses: {currentPlayer['losses']}"
 
             print(f"""
 Game ongoing. Guess a number between {data["settings"]["MinValue"]["CurrentSetting"]} and {data["settings"]["MaxValue"]["CurrentSetting"]}. Current player state: {plrState}.
