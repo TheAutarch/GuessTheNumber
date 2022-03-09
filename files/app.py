@@ -1,11 +1,8 @@
-
-
 from math import *
 from random import *
 from utils import *
 
 dataObject = Util()
-print(dataObject.data)
 
 dataObject.data["general"]["currentState"] = "startScreen"
 
@@ -18,6 +15,9 @@ def clearPlayerState(gameState):
     dataObject.data["turn"] = 0
     dataObject.data["randomNumber"] = randint(dataObject.data["settings"]["MinValue"]["CurrentSetting"], dataObject.data["settings"]["MaxValue"]["CurrentSetting"])
 
+    for i in dataObject.data["players"]:
+        plr = dataObject.data["players"][i]
+        plr["attempts"] = 0
 
 def clearConsole():
     print("\n" * 150)
@@ -36,29 +36,29 @@ def createPlayerData(name, key):
             "key": key,
             "guess": 0,
             "wins": 0,
-            "losses": 0
+            "losses": 0,
+            "attempts": 0,
             }
 
 
 def displayResults():
+    currentPlayer = findPlayerFromKey(dataObject.data, dataObject.data["currentPlayer"])
+
     components = [
-        "Enter the main menu command, if you'd like to access the main menu and change settings. (Caution: entering the main menu will restart game state). Cmd: {dataObject.data['settings']['MainMenuCommand']['CurrentSetting']}",
-        "Enter the shutdown command, if you'd like to end your game session. Cmd: {dataObject.data['settings']['StopGame']['CurrentSetting']}",
-        "Amount of wins: {currentPlayer['wins']}",
-        "Amount of losses: {currentPlayer['losses']}",
-        "Amount of points: {currentPlayer['points']}",
-        "Any other input, but core commands will commence a new round."
+        f"Enter the main menu command, if you'd like to access the main menu and change settings. (Caution: entering the main menu will restart game state). Cmd: {dataObject.data['settings']['MainMenuCommand']['CurrentSetting']}",
+        f"Enter the shutdown command, if you'd like to end your game session. Cmd: {dataObject.data['settings']['StopGame']['CurrentSetting']}",
     ]
 
     playerWins = "Amount of wins: "
     playerLosses = "Amount of losses: "
     playerPoints = "Amount of points: "
-    print(dataObject.data["players"])
-    #exit()
+    
     for i in dataObject.data["players"]:
-        playerWins += i + ": " + str(dataObject.data["players"][i]["wins"]) + "  "
-        playerLosses += i + ": " + str(dataObject.data["players"][i] ["losses"]) + "  "
-        playerPoints += i + ": " + str(dataObject.data["players"][i]["points"]) + "  "
+        plr = dataObject.data["players"][i]
+
+        playerWins += plr["name"] + ": " + str(plr["wins"]) + "  "
+        playerLosses += plr["name"] + ": " + str(plr["losses"]) + "  "
+        playerPoints += plr["name"] + ": " + str(plr["points"]) + "  "
 
     return f"""{components[0]}
 {components[1]}
@@ -73,7 +73,6 @@ def initPlayers(loops):
     keys = [1, -1]
 
     for i in range(1, loops + 1):
-        print("loop")
         name = playerInput(f"Player{i}: Enter your name", [ValueError], str)
 
         if (name == "MainMenu"):
@@ -188,16 +187,18 @@ def playerInput(msg, validation, value):
 
 
 def evaluateInput(input):
+    currentPlayer = findPlayerFromKey(dataObject.data, dataObject.data["currentPlayer"])
+
     num = dataObject.data["randomNumber"]  
 
     if (input > num):
-        if (floor(dataObject.data["difficulties"][dataObject.data["settings"]["Difficulty"]["CurrentSetting"]] * (dataObject.data["settings"]["MaxValue"]["CurrentSetting"] - dataObject.data["settings"]["MinValue"]["CurrentSetting"])) - dataObject.data["turn"] == 0):
+        if (floor(dataObject.data["difficulties"][dataObject.data["settings"]["Difficulty"]["CurrentSetting"]] * (dataObject.data["settings"]["MaxValue"]["CurrentSetting"] - dataObject.data["settings"]["MinValue"]["CurrentSetting"])) - currentPlayer["attempts"] == 0):
             return "Lose"
         
         return "The number you have entered is greater than the hidden number. Try a lower number"
 
     elif (input < num):
-        if (floor(dataObject.data["difficulties"][dataObject.data["settings"]["Difficulty"]["CurrentSetting"]] * (dataObject.data["settings"]["MaxValue"]["CurrentSetting"] - dataObject.data["settings"]["MinValue"]["CurrentSetting"])) - dataObject.data["turn"] == 0):
+        if (floor(dataObject.data["difficulties"][dataObject.data["settings"]["Difficulty"]["CurrentSetting"]] * (dataObject.data["settings"]["MaxValue"]["CurrentSetting"] - dataObject.data["settings"]["MinValue"]["CurrentSetting"])) - currentPlayer["attempts"] == 0):
             return "Lose"
 
         return "The number you have entered is lower than the hidden number. Try a greater number"
@@ -245,12 +246,12 @@ def renderTerminal():
             respone = initPlayers(result)
             if (respone == "MainMenu"): return
 
-        dataObject.data["currentPlayer"] = 1
-        dataObject.data["randomNumber"] = randint(dataObject.data["settings"]["MinValue"]["CurrentSetting"], dataObject.data["settings"]["MaxValue"]["CurrentSetting"])
-        dataObject.data["gameState"] = "started"
+            dataObject.data["currentPlayer"] = 1
+            dataObject.data["randomNumber"] = randint(dataObject.data["settings"]["MinValue"]["CurrentSetting"], dataObject.data["settings"]["MaxValue"]["CurrentSetting"])
+            dataObject.data["gameState"] = "started"
 
         if (result == "promptTurn"):
-            print("run")
+            currentPlayer = findPlayerFromKey(dataObject.data, dataObject.data["currentPlayer"])
             number = playerInput("Guess number", [ValueError], int)
 
             if (number == "MainMenu"):
@@ -258,11 +259,11 @@ def renderTerminal():
                 dataObject.data["general"]["currentState"] = "startScreen"
                 return
 
+            currentPlayer["attempts"] += 1
+
             if (dataObject.data["settings"]["PlayerMode"]["CurrentSetting"] == "MultiPlayer"):
-                print("here")
-                dataObject.data["currentTurn"] *= -1
-            print(dataObject.data["currentTurn"])
-            dataObject.data["turn"] += 1
+                dataObject.data["currentPlayer"] *= -1
+                
             dataObject.data["msg"] = evaluateInput(number)
 
             if (dataObject.data["msg"] == "Win"):
@@ -272,12 +273,19 @@ def renderTerminal():
                 dataObject.data["general"]["currentState"] = "Lose"
                 
     elif (dataObject.data["general"]["currentState"] == "Win"):
-        currentPlayer = findPlayerFromKey(dataObject.data, dataObject.data["currentPlayer"])
+        currentPlayer = findPlayerFromKey(dataObject.data, dataObject.data["currentPlayer"] * -1)
 
         dataObject.endGameMsg(currentPlayer, "Win", dataObject.data)
 
         currentPlayer["wins"] += 1
         currentPlayer["points"] += dataObject.data["winPoints"]
+
+        otherPlayer = findPlayerFromKey(dataObject.data, dataObject.data["currentPlayer"])
+        otherPlayer["losses"] += 1
+        otherPlayer["points"] += dataObject.data["losePoints"]
+
+        if (otherPlayer["points"] < 0):
+            otherPlayer["points"] = 0
 
         results = displayResults()
 
@@ -297,11 +305,14 @@ def renderTerminal():
 
         dataObject.endGameMsg(currentPlayer, "Lose", dataObject.data)
 
-        currentPlayer["losses"] += 1
-        currentPlayer["points"] += dataObject.data["losePoints"]
+        for i in dataObject.data["players"]:
+            plr = dataObject.data["players"][i]
 
-        if (currentPlayer["points"] < 0):
-            currentPlayer["points"] = 0
+            plr["losses"] += 1
+            plr["points"] += dataObject.data["losePoints"]
+
+            if (plr["points"] < 0):
+                plr["points"] = 0
 
         results = displayResults()
 
@@ -319,10 +330,7 @@ def renderTerminal():
 
 def manageGame():
     while (True):
-        result = renderTerminal()
-
-        if (result == "StartGame"):
-            print("Game is starting")
+        renderTerminal()
 
 
 manageGame()

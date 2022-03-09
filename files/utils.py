@@ -136,6 +136,7 @@ Difficulty: {data["settings"]["Difficulty"]["CurrentSetting"]} (This setting wil
             else:
                 pass
 
+            print(data["currentPlayer"])
             currentPlayer = findPlayerFromKey(data, data["currentPlayer"])
 
             plrState = plrState = f"{currentPlayer['name']}'s points: {currentPlayer['points']}. {currentPlayer['name']}'s wins: {currentPlayer['wins']}. {currentPlayer['name']}'s losses: {currentPlayer['losses']}"
@@ -143,7 +144,7 @@ Difficulty: {data["settings"]["Difficulty"]["CurrentSetting"]} (This setting wil
             print(f"""
 Game ongoing. Guess a number between {data["settings"]["MinValue"]["CurrentSetting"]} and {data["settings"]["MaxValue"]["CurrentSetting"]}. Current player state: {plrState}.
 Current turn: {currentPlayer["name"]}
-Attempts left: {floor(data["difficulties"][data["settings"]["Difficulty"]["CurrentSetting"]] * (data["settings"]["MaxValue"]["CurrentSetting"] - data["settings"]["MinValue"]["CurrentSetting"])) - data["turn"]}
+Attempts left: {floor(data["difficulties"][data["settings"]["Difficulty"]["CurrentSetting"]] * (data["settings"]["MaxValue"]["CurrentSetting"] - data["settings"]["MinValue"]["CurrentSetting"])) - currentPlayer["attempts"]}
 """)
 
             print(data["msg"])
